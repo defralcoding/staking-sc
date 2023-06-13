@@ -1,10 +1,15 @@
 USER_PEM="~/wallets/development.pem"
-PROXY="http://192.168.1.29:7950"
-CHAIN_ID="local-testnet"
-CONTRACT_ADDRESS="erd1qqqqqqqqqqqqqpgqdhas4g0qfldpjcpm7mprxuce0vmc3prf4jwst8e2le"
+
+#PROXY="http://192.168.1.29:7950"
+#CHAIN_ID="local-testnet"
+
+PROXY="https://devnet-gateway.multiversx.com"
+CHAIN_ID="D"
+
+CONTRACT_ADDRESS="erd1qqqqqqqqqqqqqpgq7ymsl3yn70z9863l02g6j8ttlewyungc4jws5cas66"
 
 deploy() {
-    mxpy --verbose contract deploy --bytecode="output/staking.wasm" \
+    mxpy contract deploy --bytecode="output/staking.wasm" \
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=100000000 \
     --send --wait-result \
@@ -60,7 +65,7 @@ set_reward_token() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "set_reward_token" \
-    --arguments str:TOKTE-a9357c \
+    --arguments str:DEFRA-3961e1 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -69,7 +74,7 @@ set_staking_token() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "set_staking_token" \
-    --arguments str:TEST-a2d9b7 \
+    --arguments str:GIANT-1ed993 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -78,7 +83,7 @@ set_tokens_per_day() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "set_tokens_per_day" \
-    --arguments 10000000000000000000 \
+    --arguments 1000000000000 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -87,7 +92,7 @@ deposit_rewards() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "ESDTTransfer" \
-    --arguments str:TOKTE-a9357c 10000000000000000000000 str:deposit_rewards \
+    --arguments str:DEFRA-3961e1 1000000000000000 str:deposit_rewards \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -96,7 +101,7 @@ stake() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "ESDTNFTTransfer" \
-    --arguments str:TEST-a2d9b7 2 1 ${CONTRACT_ADDRESS} str:stake \
+    --arguments str:GIANT-1ed993 37 1 ${CONTRACT_ADDRESS} str:stake \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
