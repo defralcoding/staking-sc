@@ -53,6 +53,31 @@ pub trait StakingContract: storage::Storage {
         self._stake(nonce, &caller);
     }
 
+    #[payable("*")]
+    #[endpoint]
+    fn stake_multiple(
+        &self,
+        #[payment_multi] payments: ManagedRef<'static, ManagedVec<EsdtTokenPayment<Self::Api>>>,
+    ) {
+        self.require_settings();
+
+        let staking_token = self.staking_token().get_token_id();
+        let caller = self.blockchain().get_caller();
+
+        for payment in payments.iter() {
+            let token_payment = EgldOrEsdtTokenPayment::from(payment);
+            let (token_identifier, nonce, _) = token_payment.into_tuple();
+
+            require!(
+                &token_identifier == &staking_token,
+                "The staking token must be: {}",
+                staking_token
+            );
+
+            self._stake(nonce, &caller);
+        }
+    }
+
     fn _stake(&self, nonce: u64, user: &ManagedAddress) {
         let new_position = StakingPosition {
             nonce,
