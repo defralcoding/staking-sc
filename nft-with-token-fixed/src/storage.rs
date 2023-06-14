@@ -47,20 +47,27 @@ pub trait Storage {
     //
     // SETTERS
     //
-    //TODO modificare, solo gli admin possono settare i parametri
     #[endpoint]
-    #[storage_set("admin")]
-    fn set_admin(&self, admin: ManagedAddress);
+    fn set_admin(&self, admin: ManagedAddress) {
+        self.require_admin_or_owner();
+        self.admin().set(admin);
+    }
 
     #[endpoint]
-    #[storage_set("staking_token")]
-    fn set_staking_token(&self, staking_token: TokenIdentifier);
+    fn set_staking_token(&self, staking_token: TokenIdentifier) {
+        self.require_admin_or_owner();
+        self.staking_token().set_token_id(staking_token);
+    }
 
     #[endpoint]
-    #[storage_set("reward_token")]
-    fn set_reward_token(&self, reward_token: TokenIdentifier);
+    fn set_reward_token(&self, reward_token: TokenIdentifier) {
+        self.require_admin_or_owner();
+        self.reward_token().set_token_id(reward_token);
+    }
 
     #[endpoint]
-    #[storage_set("tokens_per_day")]
-    fn set_tokens_per_day(&self, tokens_per_day: BigUint);
+    fn set_tokens_per_day(&self, tokens_per_day: BigUint) {
+        self.require_admin_or_owner();
+        self.tokens_per_day().set(tokens_per_day);
+    }
 }
