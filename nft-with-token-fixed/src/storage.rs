@@ -47,9 +47,9 @@ pub trait Storage {
     //
     // SETTERS
     //
+    #[only_owner]
     #[endpoint]
     fn set_admin(&self, admin: ManagedAddress) {
-        self.require_admin_or_owner();
         self.admin().set(admin);
     }
 
