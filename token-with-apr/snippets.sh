@@ -6,7 +6,7 @@ USER_PEM="~/wallets/development.pem"
 PROXY="https://devnet-gateway.multiversx.com"
 CHAIN_ID="D"
 
-CONTRACT_ADDRESS="erd1qqqqqqqqqqqqqpgq7ymsl3yn70z9863l02g6j8ttlewyungc4jws5cas66"
+CONTRACT_ADDRESS="erd1qqqqqqqqqqqqqpgqnx25cpxhurers4enwqtg3jgcfy8qcrnt4jws5g278q"
 
 deploy() {
     mxpy contract deploy --bytecode="output/staking.wasm" \
@@ -65,7 +65,7 @@ set_reward_token() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "set_reward_token" \
-    --arguments str:DEFRA-3961e1 \
+    --arguments str:XCUMB-da0e35 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -74,16 +74,16 @@ set_staking_token() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "set_staking_token" \
-    --arguments str:GIANT-1ed993 \
+    --arguments str:XCUMB-da0e35 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
-set_tokens_per_day() {
+set_apr() {
     mxpy contract call ${CONTRACT_ADDRESS} \
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
-    --function "set_tokens_per_day" \
-    --arguments 1000000000000 \
+    --function "set_apr" \
+    --arguments 50 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -92,16 +92,16 @@ deposit_rewards() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "ESDTTransfer" \
-    --arguments str:DEFRA-3961e1 1000000000000000 str:deposit_rewards \
+    --arguments str:XCUMB-da0e35 10000000000000000000000 str:deposit_rewards \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
 stake() {
-    mxpy contract call erd19hcnc2djsjay3prvhuzr0phveducv93khj435pqjza73tcyu4jwsuqywdh \
+    mxpy contract call ${CONTRACT_ADDRESS} \
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
-    --function "ESDTNFTTransfer" \
-    --arguments str:GIANT-1ed993 37 1 ${CONTRACT_ADDRESS} str:stake \
+    --function "ESDTTransfer" \
+    --arguments str:XCUMB-da0e35 10000000000000000000000 str:stake \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -110,14 +110,14 @@ unstake() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "unstake" \
-    --arguments 14 \
+    --arguments 1000000000000000000 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
 claim_rewards() {
     mxpy contract call ${CONTRACT_ADDRESS} \
     --recall-nonce --pem=${USER_PEM} \
-    --gas-limit=100000000 \
+    --gas-limit=10000000 \
     --function "claim_rewards" \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
