@@ -36,6 +36,10 @@ pub trait Storage {
     #[storage_mapper("reward_token")]
     fn reward_token(&self) -> FungibleTokenMapper;
 
+    #[view(getRewardsAmount)]
+    #[storage_mapper("rewards_amount")]
+    fn rewards_amount(&self) -> SingleValueMapper<BigUint>;
+
     #[view(getApr)]
     #[storage_mapper("apr")]
     fn apr(&self) -> SingleValueMapper<u64>;

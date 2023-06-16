@@ -21,7 +21,11 @@ pub trait StakingContract: storage::Storage {
 
     #[payable("*")]
     #[endpoint]
-    fn deposit_rewards(&self, #[payment_token] token: EgldOrEsdtTokenIdentifier) {
+    fn deposit_rewards(
+        &self,
+        #[payment_token] token: EgldOrEsdtTokenIdentifier,
+        #[payment_amount] amount: BigUint,
+    ) {
         self.require_admin_or_owner();
         self.require_settings();
 
@@ -31,6 +35,10 @@ pub trait StakingContract: storage::Storage {
             "The reward token must be: {}",
             reward_token
         );
+
+        let prev_rewards_amount = self.rewards_amount().get();
+        let new_rewards_amount = prev_rewards_amount + amount;
+        self.rewards_amount().set(new_rewards_amount);
     }
 
     #[payable("*")]
@@ -91,7 +99,7 @@ pub trait StakingContract: storage::Storage {
         }
 
         let timestamp_diff = current_timestamp - staking_position.last_claimed_timestamp;
-        staking_position.staked_amount * apr * timestamp_diff
+        staking_position.staked_amount * apr / BigUint::from(100u32) * timestamp_diff
             / BigUint::from(365u32 * 24u32 * 60u32 * 60u32) //TODO check if this is correct
     }
 
@@ -158,13 +166,14 @@ pub trait StakingContract: storage::Storage {
             return;
         }
         let reward_token = self.reward_token();
-        require!(
-            reward_token.get_balance() >= amount,
-            "Not enough deposited rewards"
-        );
+        let rewards_amount = self.rewards_amount().get();
+
+        require!(rewards_amount >= amount, "Not enough deposited rewards");
 
         self.send()
             .direct_esdt(&to, &reward_token.get_token_id(), 0, &amount);
+
+        self.rewards_amount().set(rewards_amount - amount);
     }
 
     fn _send_staking_token(&self, amount: BigUint, to: &ManagedAddress) {

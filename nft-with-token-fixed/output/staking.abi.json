@@ -124,6 +124,16 @@
             ]
         },
         {
+            "name": "getRewardsAmount",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
             "name": "getTokensPerDay",
             "mutability": "readonly",
             "inputs": [],
@@ -151,6 +161,7 @@
         },
         {
             "name": "set_admin",
+            "onlyOwner": true,
             "mutability": "mutable",
             "inputs": [
                 {
