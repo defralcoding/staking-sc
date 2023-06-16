@@ -16,10 +16,10 @@ pub trait Storage {
 
     fn require_settings(&self) {
         let staking_token_empty = self.staking_token().is_empty();
-        let apr = self.apr().is_empty();
+        let apr_empty = self.apr().is_empty();
         let reward_token_empty = self.reward_token().is_empty();
         require!(
-            !staking_token_empty && !apr && !reward_token_empty,
+            !staking_token_empty && !apr_empty && !reward_token_empty,
             "The contract is not initialized",
         );
     }

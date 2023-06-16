@@ -72,7 +72,6 @@ pub trait StakingContract: storage::Storage {
         }
 
         staking_position.staked_amount += amount;
-
         user_staking_mapper.set(staking_position);
     }
 
