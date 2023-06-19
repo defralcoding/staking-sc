@@ -154,6 +154,8 @@ pub trait StakingContract: storage::Storage {
         self._send_reward_token(rewards, &user);
 
         staking_position.staked_amount -= amount;
+        staking_position.last_claimed_timestamp = self.blockchain().get_block_timestamp();
+
         if staking_position.staked_amount == BigUint::zero() {
             self.staked_addresses().swap_remove(&user);
             self.user_staking(&user).clear();
