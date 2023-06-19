@@ -77,6 +77,7 @@ pub trait StakingContract: storage::Storage {
 
         if !new_user {
             self._claim_rewards_for_user(&user);
+            staking_position.last_claimed_timestamp = self.blockchain().get_block_timestamp();
         }
 
         staking_position.staked_amount += amount;
