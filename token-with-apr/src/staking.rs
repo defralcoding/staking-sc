@@ -94,13 +94,12 @@ pub trait StakingContract: storage::Storage {
         let current_timestamp = self.blockchain().get_block_timestamp();
 
         if current_timestamp <= staking_position.last_claimed_timestamp {
-            //TODO check if needed
             return BigUint::zero();
         }
 
         let timestamp_diff = current_timestamp - staking_position.last_claimed_timestamp;
         staking_position.staked_amount * apr / BigUint::from(100u32) * timestamp_diff
-            / BigUint::from(365u32 * 24u32 * 60u32 * 60u32) //TODO check if this is correct
+            / BigUint::from(365u32 * 24u32 * 60u32 * 60u32)
     }
 
     #[endpoint]
@@ -171,7 +170,7 @@ pub trait StakingContract: storage::Storage {
         let reward_token = self.reward_token();
         let rewards_amount = self.rewards_amount().get();
 
-        require!(rewards_amount >= amount, "Not enough deposited rewards");
+        require!(rewards_amount > amount, "Not enough deposited rewards");
 
         self.send()
             .direct_esdt(&to, &reward_token.get_token_id(), 0, &amount);
