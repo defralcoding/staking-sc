@@ -7,8 +7,10 @@ multiversx_sc::derive_imports!();
     TypeAbi, TopEncode, TopDecode, NestedEncode, NestedDecode, PartialEq, Debug, ManagedVecItem,
 )]
 pub struct StakingPosition<M: ManagedTypeApi> {
+    pub id: u64,
     pub staked_amount: BigUint<M>,
     pub staked_epoch: u64,
+    pub unlock_timestamp: u64,
     pub last_claimed_timestamp: u64,
 }
 
@@ -47,7 +49,7 @@ pub trait StakingContract: storage::Storage {
         &self,
         #[payment_token] token: EgldOrEsdtTokenIdentifier,
         #[payment_amount] amount: BigUint,
-    ) {
+    ) -> u64 {
         self.require_settings();
 
         let staking_token = self.staking_token().get_token_id();
@@ -58,29 +60,28 @@ pub trait StakingContract: storage::Storage {
         );
 
         let caller = self.blockchain().get_caller();
-        self._stake(amount, &caller);
+        self._stake(amount, &caller)
     }
 
-    fn _stake(&self, amount: BigUint, user: &ManagedAddress) {
-        let user_staking_mapper = self.user_staking(&user);
-        let new_user = self.staked_addresses().insert(user.clone());
+    //TODO check
+    //TODO p2: if stake in the same epoch, add to the same position
+    fn _stake(&self, amount: BigUint, user: &ManagedAddress) -> u64 {
+        let new_id = self.last_id().get() + 1;
+        let lock_days = self.lock_days().get();
 
-        let mut staking_position = if !new_user {
-            user_staking_mapper.get()
-        } else {
-            StakingPosition {
-                staked_amount: BigUint::zero(),
-                staked_epoch: self.blockchain().get_block_epoch(),
-                last_claimed_timestamp: self.blockchain().get_block_timestamp(),
-            }
+        let unlock_timestamp = self.blockchain().get_block_timestamp() + lock_days * 24 * 60 * 60;
+
+        let new_position = StakingPosition {
+            id: new_id,
+            staked_amount: amount,
+            staked_epoch: self.blockchain().get_block_epoch(),
+            unlock_timestamp,
+            last_claimed_timestamp: self.blockchain().get_block_timestamp(),
         };
-
-        if !new_user {
-            self._claim_rewards_for_user(&user, &mut staking_position);
-        }
-
-        staking_position.staked_amount += amount;
-        user_staking_mapper.set(staking_position);
+        self.user_staking(user).insert(new_position);
+        self.staked_addresses().insert(user.clone());
+        self.last_id().set(new_id);
+        new_id
     }
 
     #[view(calculateRewardsForUser)]
@@ -88,8 +89,19 @@ pub trait StakingContract: storage::Storage {
         self._calculate_rewards_for_user(&address)
     }
 
+    //TODO check
     fn _calculate_rewards_for_user(&self, address: &ManagedAddress) -> BigUint {
-        let staking_position = self.user_staking(&address).get();
+        let mut total_rewards = BigUint::zero();
+        for position in self.user_staking(&address).iter() {
+            total_rewards += self._calculate_rewards_for_position(&position);
+        }
+        total_rewards
+    }
+
+    fn _calculate_rewards_for_position(
+        &self,
+        staking_position: &StakingPosition<Self::Api>,
+    ) -> BigUint {
         let apr = self.apr().get();
         let current_timestamp = self.blockchain().get_block_timestamp();
 
@@ -98,68 +110,64 @@ pub trait StakingContract: storage::Storage {
         }
 
         let timestamp_diff = current_timestamp - staking_position.last_claimed_timestamp;
-        staking_position.staked_amount * apr / BigUint::from(100u32) * timestamp_diff
+        staking_position.staked_amount.clone() * apr / BigUint::from(100u32) * timestamp_diff
             / BigUint::from(365u32 * 24u32 * 60u32 * 60u32)
     }
 
     #[endpoint]
     fn claim_rewards(&self) {
         let caller = self.blockchain().get_caller();
-        let mut staking_position = self.user_staking(&caller).get();
-        self._claim_rewards_for_user(&caller, &mut staking_position);
+        self._claim_rewards_for_user(&caller);
     }
 
-    fn _claim_rewards_for_user(
-        &self,
-        user: &ManagedAddress,
-        staking_position: &mut StakingPosition<Self::Api>,
-    ) {
+    //TODO check
+    fn _claim_rewards_for_user(&self, user: &ManagedAddress) {
         let rewards = self._calculate_rewards_for_user(&user);
-        let user_staking_mapper = self.user_staking(&user);
-
         require!(rewards > BigUint::zero(), "No rewards to claim");
 
         self._send_reward_token(rewards, &user);
 
-        staking_position.last_claimed_timestamp = self.blockchain().get_block_timestamp();
-        user_staking_mapper.set(staking_position);
+        let mut positions_to_re_add: ManagedVec<StakingPosition<Self::Api>> = ManagedVec::new();
+        for mut position in self.user_staking(&user).iter() {
+            position.last_claimed_timestamp = self.blockchain().get_block_timestamp();
+            positions_to_re_add.push(position);
+        }
+
+        self.user_staking(&user).clear();
+        self.user_staking(&user).extend(&positions_to_re_add);
     }
 
+    //TODO check
     #[endpoint]
-    fn unstake(&self, amount: BigUint) {
+    fn unstake(&self, id: u64) {
         let caller = self.blockchain().get_caller();
+        let user_staking = self.user_staking(&caller);
+        let mut found = false;
+        for position in user_staking.iter() {
+            if position.id == id {
+                self._unstake(&caller, &position);
+                found = true;
+                break;
+            }
+        }
 
-        require!(
-            self.staked_addresses().contains(&caller),
-            "User has not staked"
-        );
-
-        let mut staking_position = self.user_staking(&caller).get();
-
-        require!(
-            staking_position.staked_amount >= amount,
-            "User has not staked enough"
-        );
-
-        self._unstake(amount, &caller, &mut staking_position);
+        require!(found, "Staking position not found");
     }
 
-    fn _unstake(
-        &self,
-        amount: BigUint,
-        user: &ManagedAddress,
-        staking_position: &mut StakingPosition<Self::Api>,
-    ) {
-        self._send_staking_token(amount.clone(), &user);
-        self._claim_rewards_for_user(&user, staking_position);
+    //TODO check
+    fn _unstake(&self, user: &ManagedAddress, staking_position: &StakingPosition<Self::Api>) {
+        let current_timestamp = self.blockchain().get_block_timestamp();
+        require!(
+            current_timestamp >= staking_position.unlock_timestamp,
+            "The staking position is still locked"
+        );
 
-        staking_position.staked_amount -= amount;
+        self._send_staking_token(staking_position.staked_amount.clone(), &user);
+        self._claim_rewards_for_user(&user);
 
-        if staking_position.staked_amount == BigUint::zero() {
+        self.user_staking(&user).swap_remove(staking_position);
+        if self.user_staking(&user).is_empty() {
             self.staked_addresses().swap_remove(&user);
-            self.user_staking(&user).clear();
-        } else {
-            self.user_staking(&user).set(staking_position);
         }
     }
 

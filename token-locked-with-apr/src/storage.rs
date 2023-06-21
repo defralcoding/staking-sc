@@ -18,8 +18,9 @@ pub trait Storage {
         let staking_token_empty = self.staking_token().is_empty();
         let apr_empty = self.apr().is_empty();
         let reward_token_empty = self.reward_token().is_empty();
+        let lock_days_empty = self.lock_days().is_empty();
         require!(
-            !staking_token_empty && !apr_empty && !reward_token_empty,
+            !staking_token_empty && !apr_empty && !reward_token_empty && !lock_days_empty,
             "The contract is not initialized",
         );
     }
@@ -44,9 +45,9 @@ pub trait Storage {
     #[storage_mapper("apr")]
     fn apr(&self) -> SingleValueMapper<u64>;
 
-    #[view(getApr)]
-    #[storage_mapper("apr")]
-    fn apr(&self) -> SingleValueMapper<u64>;
+    #[view(getLockDays)]
+    #[storage_mapper("lock_days")]
+    fn lock_days(&self) -> SingleValueMapper<u64>;
 
     #[view(getUserStaking)]
     #[storage_mapper("user_staking")]
@@ -56,6 +57,10 @@ pub trait Storage {
     #[view(getStakedAddresses)]
     #[storage_mapper("stakedAddresses")]
     fn staked_addresses(&self) -> UnorderedSetMapper<ManagedAddress>;
+
+    #[view(getLastId)]
+    #[storage_mapper("last_id")]
+    fn last_id(&self) -> SingleValueMapper<u64>;
 
     //
     // SETTERS
@@ -82,5 +87,11 @@ pub trait Storage {
     fn set_apr(&self, apr: u64) {
         self.require_admin_or_owner();
         self.apr().set(apr);
+    }
+
+    #[endpoint]
+    fn set_lock_days(&self, lock_days: u64) {
+        self.require_admin_or_owner();
+        self.lock_days().set(lock_days);
     }
 }

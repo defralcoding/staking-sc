@@ -6,7 +6,7 @@ USER_PEM="~/wallets/development.pem"
 PROXY="https://devnet-gateway.multiversx.com"
 CHAIN_ID="D"
 
-CONTRACT_ADDRESS="erd1qqqqqqqqqqqqqpgqnx25cpxhurers4enwqtg3jgcfy8qcrnt4jws5g278q"
+CONTRACT_ADDRESS="erd1qqqqqqqqqqqqqpgqxgcasq6e6lgnugenj6lmdwudp9ymgwcs4jwsu9hn6c"
 
 deploy() {
     mxpy contract deploy --bytecode="output/staking.wasm" \
@@ -83,7 +83,16 @@ set_apr() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "set_apr" \
-    --arguments 50 \
+    --arguments 180 \
+    --send --wait-result \
+    --proxy=${PROXY} --chain=${CHAIN_ID} || return
+}
+set_lock_days() {
+    mxpy contract call ${CONTRACT_ADDRESS} \
+    --recall-nonce --pem=${USER_PEM} \
+    --gas-limit=20000000 \
+    --function "set_lock_days" \
+    --arguments 365 \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }

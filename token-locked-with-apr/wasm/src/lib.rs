@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           16
+// Endpoints:                           19
 // Async Callback (empty):               1
-// Total number of exported functions:  18
+// Total number of exported functions:  21
 
 #![no_std]
 #![feature(lang_items)]
@@ -28,12 +28,15 @@ multiversx_sc_wasm_adapter::endpoints! {
         getRewardToken
         getRewardsAmount
         getApr
+        getLockDays
         getUserStaking
         getStakedAddresses
+        getLastId
         set_admin
         set_staking_token
         set_reward_token
         set_apr
+        set_lock_days
     )
 }
 
