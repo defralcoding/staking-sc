@@ -48,6 +48,10 @@ pub trait Storage {
     #[storage_mapper("user_staking")]
     fn user_staking(&self, user: &ManagedAddress) -> UnorderedSetMapper<StakingPosition>;
 
+    #[view(getStakedAddresses)]
+    #[storage_mapper("stakedAddresses")]
+    fn staked_addresses(&self) -> UnorderedSetMapper<ManagedAddress>;
+
     //
     // SETTERS
     //
