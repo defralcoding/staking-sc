@@ -160,6 +160,17 @@
             ]
         },
         {
+            "name": "getStakedAddresses",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<Address>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
             "name": "set_admin",
             "onlyOwner": true,
             "mutability": "mutable",

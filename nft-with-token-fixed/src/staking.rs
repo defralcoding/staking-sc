@@ -184,11 +184,11 @@ pub trait StakingContract: storage::Storage {
     // returns the rewards to send to the user
     fn _unstake_position(&self, user: &ManagedAddress, position: &StakingPosition) -> BigUint {
         let rewards = self._calculate_rewards_for_position(position);
-        let user_staking_mapper = self.user_staking(&user);
+        let mut user_staking_mapper = self.user_staking(&user);
         self._send_staking_token(position.nonce, &user);
         user_staking_mapper.swap_remove(position);
 
-        if user_staking_mapper.len() == 0 {
+        if user_staking_mapper.is_empty() {
             self.staked_addresses().swap_remove(&user);
         }
 
