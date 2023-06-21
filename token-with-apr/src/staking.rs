@@ -76,8 +76,7 @@ pub trait StakingContract: storage::Storage {
         };
 
         if !new_user {
-            self._claim_rewards_for_user(&user);
-            staking_position.last_claimed_timestamp = self.blockchain().get_block_timestamp();
+            self._claim_rewards_for_user(&user, &mut staking_position);
         }
 
         staking_position.staked_amount += amount;
@@ -107,10 +106,15 @@ pub trait StakingContract: storage::Storage {
     #[endpoint]
     fn claim_rewards(&self) {
         let caller = self.blockchain().get_caller();
-        self._claim_rewards_for_user(&caller);
+        let mut staking_position = self.user_staking(&caller).get();
+        self._claim_rewards_for_user(&caller, &mut staking_position);
     }
 
-    fn _claim_rewards_for_user(&self, user: &ManagedAddress) {
+    fn _claim_rewards_for_user(
+        &self,
+        user: &ManagedAddress,
+        staking_position: &mut StakingPosition<Self::Api>,
+    ) {
         let rewards = self._calculate_rewards_for_user(&user);
         let user_staking_mapper = self.user_staking(&user);
 
@@ -118,7 +122,6 @@ pub trait StakingContract: storage::Storage {
 
         self._send_reward_token(rewards, &user);
 
-        let mut staking_position = user_staking_mapper.get();
         staking_position.last_claimed_timestamp = self.blockchain().get_block_timestamp();
         user_staking_mapper.set(staking_position);
     }
@@ -148,13 +151,10 @@ pub trait StakingContract: storage::Storage {
         user: &ManagedAddress,
         staking_position: &mut StakingPosition<Self::Api>,
     ) {
-        let rewards = self._calculate_rewards_for_user(&user);
-
         self._send_staking_token(amount.clone(), &user);
-        self._send_reward_token(rewards, &user);
+        self._claim_rewards_for_user(&user, staking_position);
 
         staking_position.staked_amount -= amount;
-        staking_position.last_claimed_timestamp = self.blockchain().get_block_timestamp();
 
         if staking_position.staked_amount == BigUint::zero() {
             self.staked_addresses().swap_remove(&user);
