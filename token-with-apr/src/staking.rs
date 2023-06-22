@@ -89,6 +89,10 @@ pub trait StakingContract: storage::Storage {
     }
 
     fn _calculate_rewards_for_user(&self, address: &ManagedAddress) -> BigUint {
+        if !self.staked_addresses().contains(&address) {
+            return BigUint::zero();
+        }
+
         let staking_position = self.user_staking(&address).get();
         let apr = self.apr().get();
         let current_timestamp = self.blockchain().get_block_timestamp();
