@@ -1,12 +1,12 @@
 USER_PEM="~/wallets/development.pem"
 
-#PROXY="http://192.168.1.29:7950"
-#CHAIN_ID="local-testnet"
-
 PROXY="https://devnet-gateway.multiversx.com"
 CHAIN_ID="D"
 
 CONTRACT_ADDRESS="erd1qqqqqqqqqqqqqpgq7ymsl3yn70z9863l02g6j8ttlewyungc4jws5cas66"
+USER_ADDRESS="erd19hcnc2djsjay3prvhuzr0phveducv93khj435pqjza73tcyu4jwsuqywdh"
+STAKING_TOKEN="GIANT-1ed993"
+REWARD_TOKEN="XCUMB-da0e35"
 
 deploy() {
     mxpy contract deploy --bytecode="output/staking.wasm" \
@@ -41,12 +41,12 @@ call() {
 getgenerico() {
     echo User Staking Positions
     erdpy contract query ${CONTRACT_ADDRESS} \
-    --function "getUserStaking" --arguments erd19hcnc2djsjay3prvhuzr0phveducv93khj435pqjza73tcyu4jwsuqywdh \
+    --function "getUserStaking" --arguments ${USER_ADDRESS} \
     --proxy=${PROXY} || return
 
     echo User Rewards
     erdpy contract query ${CONTRACT_ADDRESS} \
-    --function "calculateRewardsForUser" --arguments erd19hcnc2djsjay3prvhuzr0phveducv93khj435pqjza73tcyu4jwsuqywdh \
+    --function "calculateRewardsForUser" --arguments ${USER_ADDRESS} \
     --proxy=${PROXY} || return
 }
 
@@ -74,7 +74,7 @@ set_staking_token() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "set_staking_token" \
-    --arguments str:GIANT-1ed993 \
+    --arguments str:${STAKING_TOKEN} \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
@@ -92,16 +92,16 @@ deposit_rewards() {
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "ESDTTransfer" \
-    --arguments str:DEFRA-3961e1 1000000000000000 str:deposit_rewards \
+    --arguments str:${REWARD_TOKEN} 100000000000000000000000 str:deposit_rewards \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }
 stake() {
-    mxpy contract call erd19hcnc2djsjay3prvhuzr0phveducv93khj435pqjza73tcyu4jwsuqywdh \
+    mxpy contract call ${USER_ADDRESS} \
     --recall-nonce --pem=${USER_PEM} \
     --gas-limit=20000000 \
     --function "ESDTNFTTransfer" \
-    --arguments str:GIANT-1ed993 37 1 ${CONTRACT_ADDRESS} str:stake \
+    --arguments str:${STAKING_TOKEN} 37 1 ${CONTRACT_ADDRESS} str:stake \
     --send --wait-result \
     --proxy=${PROXY} --chain=${CHAIN_ID} || return
 }

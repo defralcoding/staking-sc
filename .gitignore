@@ -11,3 +11,5 @@ Cargo.lock
 *.pdb
 *.pem
 .DS_Store
+
+*/snippets.*.sh
